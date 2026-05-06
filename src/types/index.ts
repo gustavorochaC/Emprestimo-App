@@ -21,6 +21,7 @@ export interface Emprestimo {
   observacoes?: string
   criado_em: string
   cliente?: Cliente
+  pagamentos?: Pagamento[]
 }
 
 export interface Pagamento {
@@ -35,3 +36,9 @@ export interface Pagamento {
 }
 
 export type TipoPagamento = 'parcial' | 'juros' | 'quitacao'
+
+export interface ClienteResumo extends Cliente {
+  totalEmprestado: number
+  emprestimosAtivos: number
+  saldoDevedor: number
+}
