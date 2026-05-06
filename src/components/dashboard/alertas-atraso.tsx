@@ -17,9 +17,9 @@ function severidadeBadge(dias: number) {
     return <Badge variant="destructive">Crítico</Badge>
   }
   if (dias > 60) {
-    return <Badge className="bg-orange-500 text-white hover:bg-orange-500">Alto</Badge>
+    return <Badge className="bg-orange-500 hover:bg-orange-500">Alto</Badge>
   }
-  return <Badge className="bg-amber-500 text-white hover:bg-amber-500">Médio</Badge>
+  return <Badge className="bg-amber-500 hover:bg-amber-500">Médio</Badge>
 }
 
 export function AlertasAtraso({ alertas }: AlertasAtrasoProps) {

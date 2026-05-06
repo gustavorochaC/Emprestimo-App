@@ -115,9 +115,9 @@ export default function RelatoriosPage() {
                     {d.diasAtraso > 90 ? (
                       <Badge variant="destructive">Crítico</Badge>
                     ) : d.diasAtraso > 60 ? (
-                      <Badge className="bg-orange-500 text-white hover:bg-orange-500">Alto</Badge>
+                      <Badge className="bg-orange-500 hover:bg-orange-500">Alto</Badge>
                     ) : (
-                      <Badge className="bg-amber-500 text-white hover:bg-amber-500">Médio</Badge>
+                      <Badge className="bg-amber-500 hover:bg-amber-500">Médio</Badge>
                     )}
                   </TableCell>
                 </TableRow>
