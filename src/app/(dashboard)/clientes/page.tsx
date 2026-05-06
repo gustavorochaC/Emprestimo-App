@@ -124,11 +124,7 @@ export default function ClientesPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <ClientesTable clientes={clientes} onEdit={openEdit} onDelete={handleDelete} />
-        </CardContent>
-      </Card>
+      <ClientesTable clientes={clientes} onEdit={openEdit} onDelete={handleDelete} />
       <ClienteForm
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}

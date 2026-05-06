@@ -1,9 +1,6 @@
-import { type NextRequest, NextResponse } from 'next/server'
+import { clerkMiddleware } from '@clerk/nextjs/server'
 
-export async function proxy(request: NextRequest) {
-  // Temporariamente sem redirect automático para testar login
-  return NextResponse.next()
-}
+export default clerkMiddleware()
 
 export const config = {
   matcher: [

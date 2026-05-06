@@ -1,24 +1,27 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Emprestimo } from '@/types'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { calcularJurosAcumulados, calcularJurosPendentes, calcularSaldoDevedor, calcularDiasAtraso } from '@/lib/juros'
+import { getEmprestimosAtivos } from '@/app/actions'
 
 export default function RelatoriosPage() {
   const [emprestimos, setEmprestimos] = useState<Emprestimo[]>([])
   const [search, setSearch] = useState('')
-  const supabase = createClient()
 
   const fetchData = useCallback(async () => {
-    const { data } = await supabase.from('emp_emprestimos').select('*, cliente:emp_clientes(*)').eq('status', 'ativo')
-    setEmprestimos(data || [])
-  }, [supabase])
+    const result = await getEmprestimosAtivos()
+    if (result.success) {
+      setEmprestimos(result.data)
+    } else {
+      alert(result.error)
+    }
+  }, [])
 
   useEffect(() => {
     fetchData()
@@ -32,8 +35,8 @@ export default function RelatoriosPage() {
     .filter((e) => !search || e.cliente?.nome.toLowerCase().includes(search.toLowerCase()))
     .map((e) => {
       const jurosAcumulados = calcularJurosAcumulados(e.valor, e.taxa_juros, e.data_inicio)
-      const jurosPendentes = calcularJurosPendentes(jurosAcumulados, [])
-      const saldoDevedor = calcularSaldoDevedor(e.valor, [])
+      const jurosPendentes = calcularJurosPendentes(jurosAcumulados, e.pagamentos || [])
+      const saldoDevedor = calcularSaldoDevedor(e.valor, e.pagamentos || [])
       const diasAtraso = calcularDiasAtraso(e.data_vencimento || e.data_inicio)
 
       return {
@@ -74,6 +77,7 @@ export default function RelatoriosPage() {
       <Card>
         <CardHeader>
           <CardTitle>Lista de Devedores</CardTitle>
+          <CardDescription>Clientes com mais de 30 dias de atraso</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Input
@@ -108,9 +112,13 @@ export default function RelatoriosPage() {
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(d.totalDevido)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={d.diasAtraso > 60 ? 'destructive' : 'default'}>
-                      {d.diasAtraso > 60 ? 'Crítico' : 'Atrasado'}
-                    </Badge>
+                    {d.diasAtraso > 90 ? (
+                      <Badge variant="destructive">Crítico</Badge>
+                    ) : d.diasAtraso > 60 ? (
+                      <Badge className="bg-orange-500 text-white hover:bg-orange-500">Alto</Badge>
+                    ) : (
+                      <Badge className="bg-amber-500 text-white hover:bg-amber-500">Médio</Badge>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

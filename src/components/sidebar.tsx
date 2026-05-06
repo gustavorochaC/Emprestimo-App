@@ -2,8 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useClerk } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Menu, LayoutDashboard, Users, DollarSign, CreditCard, BarChart3, LogOut } from 'lucide-react'
@@ -18,12 +17,10 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const router = useRouter()
-  const supabase = createClient()
+  const { signOut } = useClerk()
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
+    await signOut({ redirectUrl: '/login' })
   }
 
   return (

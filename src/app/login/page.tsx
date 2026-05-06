@@ -1,77 +1,81 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { SignIn } from '@clerk/nextjs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Mail, Lock, Wallet, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react'
+import { Wallet } from 'lucide-react'
+
+const clerkAppearance = {
+  theme: 'simple' as const,
+  variables: {
+    colorPrimary: '#2563eb',
+    colorForeground: '#0f172a',
+    colorMutedForeground: '#64748b',
+    colorBackground: 'transparent',
+    colorInput: '#ffffff',
+    colorInputForeground: '#0f172a',
+    colorBorder: '#e2e8f0',
+    borderRadius: '0.5rem',
+    spacing: '1rem',
+  },
+  elements: {
+    // Remove o card interno do Clerk
+    card: 'shadow-none border-none bg-transparent p-0 gap-0',
+    // Esconde o header do Clerk
+    header: 'hidden',
+    headerTitle: 'hidden',
+    headerSubtitle: 'hidden',
+    // Esconde o footer do Clerk ("Secured by Clerk", "Development mode")
+    footer: 'hidden',
+    // Manter e estilizar o link "Sign up"
+    footerAction: 'text-sm text-slate-500 text-center mt-4 block',
+    footerActionLink: 'text-blue-600 hover:text-blue-700 font-medium underline-offset-4 hover:underline',
+    // Botão primário (Continue)
+    formButtonPrimary:
+      'bg-blue-600 hover:bg-blue-700 text-white rounded-lg h-11 font-medium w-full transition-colors duration-200 shadow-none',
+    // Inputs
+    formFieldInput:
+      'h-11 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all duration-200',
+    // Labels
+    formFieldLabel: 'text-sm font-medium text-slate-700 mb-1.5 block',
+    // Container do campo
+    formField: 'mb-0',
+    // Botão Google OAuth
+    socialButtonsBlockButton:
+      'h-11 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium transition-colors duration-200',
+    socialButtonsBlockButtonText: 'text-sm font-medium',
+    // Container dos botões sociais
+    socialButtons: 'mb-0',
+    // Divisor "or"
+    dividerLine: 'bg-slate-200',
+    dividerText: 'text-slate-400 text-sm font-normal',
+    dividerRow: 'my-5',
+    // Container do formulário
+    form: 'gap-0',
+    // Container principal
+    main: 'gap-0',
+    // Preview de identidade (quando email é inserido)
+    identityPreview: 'rounded-lg border border-slate-200 bg-slate-50 p-3 mb-4',
+    identityPreviewText: 'text-sm text-slate-700',
+    identityPreviewEditButton: 'text-blue-600 hover:text-blue-700 text-sm font-medium',
+    // Alertas/erros
+    alert: 'rounded-lg border border-red-200 bg-red-50 text-red-800 p-3 text-sm mb-4',
+    alertText: 'text-sm',
+    // Erros de campo
+    formFieldError: 'text-sm text-red-600 mt-1.5',
+    // Warning
+    formFieldWarning: 'text-sm text-amber-600 mt-1.5',
+    // Link geral
+    link: 'text-blue-600 hover:text-blue-700 font-medium underline-offset-4 hover:underline transition-colors duration-200',
+    // OTP input (código de verificação)
+    otpCodeFieldInput: 'h-11 w-11 rounded-lg border border-slate-200 text-center text-lg font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20',
+    // Container do OTP
+    otpCodeField: 'gap-2 justify-center',
+  },
+}
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [resetSent, setResetSent] = useState(false)
-  const router = useRouter()
-  const supabase = createClient()
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    setResetSent(false)
-
-    console.log('🔄 Tentando login com:', email)
-    console.log('🔑 SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      console.log('📡 Resposta:', { data, error })
-
-      if (error) {
-        console.error('❌ Erro de login:', error.message, error)
-        setError(`Erro: ${error.message}`)
-      } else {
-        console.log('✅ Login OK! Redirecionando...')
-        router.push('/')
-        router.refresh()
-      }
-    } catch (err: any) {
-      console.error('💥 Exceção:', err)
-      setError(`Exceção: ${err.message || 'Erro desconhecido'}`)
-    }
-    setLoading(false)
-  }
-
-  const handleResetPassword = async () => {
-    if (!email) {
-      setError('Digite seu email para recuperar a senha')
-      setResetSent(false)
-      return
-    }
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
-    })
-    if (error) {
-      setError(error.message)
-      setResetSent(false)
-    } else {
-      setError('')
-      setResetSent(true)
-    }
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 px-4 py-12">
       <div className="w-full max-w-md space-y-8">
         {/* Logo / Brand */}
         <div className="flex flex-col items-center space-y-4">
@@ -89,8 +93,8 @@ export default function LoginPage() {
         </div>
 
         {/* Login Card */}
-        <Card className="border-0 shadow-xl shadow-slate-200/50 rounded-2xl">
-          <CardHeader className="space-y-1 pb-6">
+        <Card className="border border-slate-200/60 shadow-xl shadow-slate-200/50 rounded-2xl bg-white/80 backdrop-blur-sm">
+          <CardHeader className="space-y-1 pb-2 pt-6 px-6">
             <CardTitle className="text-lg font-semibold text-slate-900">
               Bem-vindo de volta
             </CardTitle>
@@ -99,109 +103,13 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
 
-          <form onSubmit={handleLogin}>
-            <CardContent className="space-y-5">
-              {/* Error / Success Alert */}
-              {error && (
-                <Alert variant="destructive" className="rounded-xl border-red-200 bg-red-50 text-red-800">
-                  <AlertDescription className="text-sm">{error}</AlertDescription>
-                </Alert>
-              )}
-              {resetSent && (
-                <Alert className="rounded-xl border-green-200 bg-green-50 text-green-800">
-                  <AlertDescription className="text-sm">
-                    Email de recuperação enviado! Verifique sua caixa de entrada.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {/* Email Input */}
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-slate-700">
-                  Email
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-11 rounded-xl border-slate-200 bg-white focus-visible:ring-blue-600 focus-visible:ring-2 transition-all"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Password Input */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-sm font-medium text-slate-700">
-                    Senha
-                  </Label>
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 h-11 rounded-xl border-slate-200 bg-white focus-visible:ring-blue-600 focus-visible:ring-2 transition-all"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Login Button */}
-              <Button
-                type="submit"
-                className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium shadow-lg shadow-blue-600/20 transition-all hover:shadow-xl hover:shadow-blue-600/30 hover:-translate-y-0.5"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Entrando...
-                  </>
-                ) : (
-                  <>
-                    Entrar no Sistema
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </form>
-
-          <div className="px-6 pb-6 pt-2">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-slate-100" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-3 text-slate-400">ou</span>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={handleResetPassword}
-              className="w-full mt-4 text-sm text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
-            >
-              Esqueceu a senha?
-            </Button>
-          </div>
+          <CardContent className="px-6 pb-6 pt-2">
+            <SignIn
+              routing="hash"
+              signUpUrl="/sign-up"
+              appearance={clerkAppearance}
+            />
+          </CardContent>
         </Card>
 
         {/* Footer */}

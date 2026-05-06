@@ -1,39 +1,59 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Emprestimo, Cliente } from '@/types'
 import { EmprestimosTable } from '@/components/emprestimos/emprestimos-table'
 import { EmprestimoForm } from '@/components/emprestimo-form'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { Plus } from 'lucide-react'
+import { getEmprestimos, getClientes, createEmprestimo, deleteEmprestimo } from '@/app/actions'
+import { emprestimoSchema } from '@/lib/schemas'
+import type { z } from 'zod'
+
+type EmprestimoFormData = z.infer<typeof emprestimoSchema>
 
 export default function EmprestimosPage() {
   const [emprestimos, setEmprestimos] = useState<Emprestimo[]>([])
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [dialogOpen, setDialogOpen] = useState(false)
-  const supabase = createClient()
 
   const fetchData = useCallback(async () => {
-    const { data: emps } = await supabase.from('emp_emprestimos').select('*, cliente:emp_clientes(*)').order('criado_em', { ascending: false })
-    setEmprestimos(emps || [])
-    const { data: clis } = await supabase.from('emp_clientes').select('*').eq('ativo', true)
-    setClientes(clis || [])
-  }, [supabase])
+    const [empsResult, clisResult] = await Promise.all([getEmprestimos(), getClientes()])
+    if (!empsResult.success) {
+      alert(empsResult.error)
+      return
+    }
+    if (!clisResult.success) {
+      alert(clisResult.error)
+      return
+    }
+    setEmprestimos(empsResult.data)
+    setClientes(clisResult.data.filter((c) => c.ativo))
+  }, [])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
-  const handleCreate = async (emprestimo: Omit<Emprestimo, 'id' | 'criado_em' | 'cliente'>) => {
-    await supabase.from('emp_emprestimos').insert(emprestimo)
-    fetchData()
+  const handleCreate = async (emprestimo: EmprestimoFormData) => {
+    const result = await createEmprestimo(emprestimo)
+    if (result.success) {
+      fetchData()
+      setDialogOpen(false)
+    } else {
+      alert(result.error)
+    }
   }
 
   const handleDelete = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir este empréstimo?')) {
-      await supabase.from('emp_emprestimos').delete().eq('id', id)
-      fetchData()
+      const result = await deleteEmprestimo(id)
+      if (result.success) {
+        fetchData()
+      } else {
+        alert(result.error)
+      }
     }
   }
 
@@ -46,7 +66,11 @@ export default function EmprestimosPage() {
           Novo Empréstimo
         </Button>
       </div>
-      <EmprestimosTable emprestimos={emprestimos} onDelete={handleDelete} />
+      <Card>
+        <CardContent className="p-0">
+          <EmprestimosTable emprestimos={emprestimos} onDelete={handleDelete} />
+        </CardContent>
+      </Card>
       <EmprestimoForm
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}

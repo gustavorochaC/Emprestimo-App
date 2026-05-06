@@ -1,16 +1,28 @@
-import { Sidebar } from '@/components/sidebar'
+import { redirect } from 'next/navigation'
+import { auth } from '@clerk/nextjs/server'
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
+import { AppSidebar } from '@/components/layout/app-sidebar'
+import { SiteHeader } from '@/components/layout/site-header'
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const session = await auth()
+  if (!session.userId) {
+    redirect('/login')
+  }
+
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      <main className="flex-1 lg:ml-64 p-8">
-        {children}
-      </main>
-    </div>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
+          {children}
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
